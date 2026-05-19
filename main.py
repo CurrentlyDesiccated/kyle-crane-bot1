@@ -4,11 +4,21 @@ import os
 from openai import OpenAI
 
 # 🔍 DEBUG: check Railway variables
-print("DISCORD TOKEN =", os.getenv("DISCORD_TOKEN"))
-print("OPENAI KEY =", os.getenv("OPENAI_API_KEY"))
+print("DISCORD TOKEN =", repr(os.getenv("DISCORD_TOKEN")))
+print("OPENAI KEY =", repr(os.getenv("OPENAI_API_KEY")))
+
+# Validate env vars early (prevents silent crashes)
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+if not DISCORD_TOKEN:
+    print("❌ DISCORD_TOKEN is missing in Railway Variables!")
+
+if not OPENAI_API_KEY:
+    print("❌ OPENAI_API_KEY is missing in Railway Variables!")
 
 # OpenAI client
-client_ai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client_ai = OpenAI(api_key=OPENAI_API_KEY)
 
 # Discord setup
 intents = discord.Intents.default()
@@ -53,13 +63,14 @@ async def crane(ctx, *, message):
 
         reply = response.choices[0].message.content
 
-        # safety trim (prevents Discord embed/message issues later)
+        # prevent Discord limit crashes
         reply = str(reply)[:1900]
 
         await ctx.send(f"🧟 Kyle Crane: {reply}")
 
     except Exception as e:
-        print("OPENAI ERROR:", e)
+        print("OPENAI ERROR TYPE:", type(e))
+        print("OPENAI ERROR:", repr(e))
         await ctx.send(f"⚠️ Error in field: {e}")
 
-bot.run(os.getenv("DISCORD_TOKEN"))
+bot.run(DISCORD_TOKEN)
