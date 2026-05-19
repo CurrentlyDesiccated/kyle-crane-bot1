@@ -52,7 +52,7 @@ memory = {}
 MAX_MEMORY = 20
 
 # =========================
-# SAFE SENTENCE SPLITTER
+# SAFE SPLITTER
 # =========================
 def split_message(text, limit=1950):
     chunks = []
@@ -107,7 +107,8 @@ async def on_message(message):
 
         completion = client.chat.completions.create(
             model="openai/gpt-oss-120b",
-            messages=messages
+            messages=messages,
+            max_tokens=600   # 🔥 THIS FIXES OVERLY LONG RESPONSES
         )
 
         reply = completion.choices[0].message.content
@@ -117,7 +118,7 @@ async def on_message(message):
             "content": reply
         })
 
-        # 💬 FULL RESPONSE (SAFE SPLIT)
+        # 💬 SAFE FULL RESPONSE
         chunks = split_message(reply)
 
         for chunk in chunks:
@@ -137,6 +138,6 @@ async def on_message(message):
 async def reset(ctx):
     user_id = str(ctx.author.id)
     memory[user_id] = []
-    await ctx.send("Your survival memory has been wiped. Start fresh.")
+    await ctx.send("🧠 Your survival memory has been wiped. Start fresh.")
 
 bot.run(DISCORD_TOKEN)
