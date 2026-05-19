@@ -6,13 +6,11 @@ from groq import Groq
 
 # 🔍 ENV VARS
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 print("DISCORD TOKEN LOADED:", bool(DISCORD_TOKEN))
-print("GROQ KEY LOADED:", bool(GROQ_API_KEY))
 
-# Groq client (FREE AI)
-client_ai = Groq(api_key=GROQ_API_KEY)
+# Groq client (correct way)
+client = Groq()
 
 # Discord setup
 intents = discord.Intents.default()
@@ -47,7 +45,7 @@ async def crane(ctx, *, message):
     try:
         print("🔥 USER:", message)
 
-        response = client_ai.chat.completions.create(
+        completion = client.chat.completions.create(
             model="openai/gpt-oss-120b",
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
@@ -55,7 +53,7 @@ async def crane(ctx, *, message):
             ]
         )
 
-        reply = response.choices[0].message.content[:1900]
+        reply = completion.choices[0].message.content[:1900]
 
         await ctx.send(f"🧟 Kyle Crane: {reply}")
 
