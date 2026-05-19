@@ -48,7 +48,7 @@ async def crane(ctx, *, message):
         print("🔥 USER:", message)
 
         response = client_ai.chat.completions.create(
-            model="llama3-70b-8192",
+            model="llama-3.1-70b-versatile",
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": message[:500]}
