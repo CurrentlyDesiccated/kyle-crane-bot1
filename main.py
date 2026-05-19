@@ -36,9 +36,13 @@ Rules:
 - Keep responses grounded, realistic, and immersive
 """
 
+# ✅ FIXED MODEL (THIS IS THE IMPORTANT PART)
+GROQ_MODEL = "openai/gpt-oss-120b"
+
 @bot.event
 async def on_ready():
     print(f"Kyle Crane is online as {bot.user}")
+    print("USING MODEL:", GROQ_MODEL)
 
 @bot.command()
 async def crane(ctx, *, message):
@@ -46,7 +50,7 @@ async def crane(ctx, *, message):
         print("🔥 USER:", message)
 
         completion = client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+            model=GROQ_MODEL,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": message[:500]}
