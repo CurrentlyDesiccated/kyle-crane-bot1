@@ -4,7 +4,7 @@ import os
 import traceback
 from groq import Groq
 
-# 🔍 ENV VARS
+# ENV VARS
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 print("DISCORD TOKEN LOADED:", bool(DISCORD_TOKEN))
@@ -18,7 +18,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# 🧟 CORE KYLE CRANE LORE MEMORY
+# CORE KYLE CRANE LORE MEMORY
 LORE_MEMORY = """
 You are Kyle Crane from Dying Light and Dying Light: The Beast.
 
@@ -41,24 +41,21 @@ Personality:
 
 Rules:
 - Never mention being an AI
-- Stay fully in character as Kyle Crane
+- Stay fully in character
 - Never break immersion
 - Respond like a real human survivor
-- Give detailed, immersive, long responses (like Character.AI)
+- Give detailed immersive responses
 """
 
-# 🧠 MEMORY STORAGE
+# MEMORY STORAGE
 memory = {}
 MAX_MEMORY = 20
 
-# =========================
 # SAFE SPLITTER
-# =========================
 def split_message(text, limit=1950):
     chunks = []
     while len(text) > limit:
         cut = text.rfind(".", 0, limit)
-
         if cut == -1:
             cut = limit
 
@@ -70,25 +67,24 @@ def split_message(text, limit=1950):
 
     return chunks
 
-# =========================
 # BOT READY
-# =========================
 @bot.event
 async def on_ready():
     print(f"Kyle Crane is online as {bot.user}")
 
-# =========================
 # AUTO REPLY SYSTEM
-# =========================
 @bot.event
 async def on_message(message):
     if message.author.bot:
         return
 
+    # IMPORTANT FIX: ignore commands so !reset doesn't trigger AI
+    if message.content.startswith("!"):
+        await bot.process_commands(message)
+        return
+
     try:
         user_id = str(message.author.id)
-
-        print("🔥 USER:", message.content)
 
         if user_id not in memory:
             memory[user_id] = []
@@ -108,7 +104,7 @@ async def on_message(message):
         completion = client.chat.completions.create(
             model="openai/gpt-oss-120b",
             messages=messages,
-            max_tokens=600   # 🔥 THIS FIXES OVERLY LONG RESPONSES
+            max_tokens=600
         )
 
         reply = completion.choices[0].message.content
@@ -118,26 +114,23 @@ async def on_message(message):
             "content": reply
         })
 
-        # 💬 SAFE FULL RESPONSE
         chunks = split_message(reply)
 
         for chunk in chunks:
             await message.channel.send(chunk)
 
     except Exception as e:
-        print("💥 ERROR:")
+        print("ERROR:")
         traceback.print_exc()
-        await message.channel.send(f"⚠️ Error: {repr(e)}")
+        await message.channel.send(f"Error: {repr(e)}")
 
     await bot.process_commands(message)
 
-# =========================
 # RESET COMMAND
-# =========================
 @bot.command()
 async def reset(ctx):
     user_id = str(ctx.author.id)
     memory[user_id] = []
-    await ctx.send("🧠 Your survival memory has been wiped. Start fresh.")
+    await ctx.send("Your survival memory has been wiped. Start fresh.")
 
 bot.run(DISCORD_TOKEN)
