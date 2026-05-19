@@ -2,12 +2,13 @@ import discord
 from discord.ext import commands
 import os
 from openai import OpenAI
+import traceback
 
 # 🔍 DEBUG: check Railway variables
 print("DISCORD TOKEN =", repr(os.getenv("DISCORD_TOKEN")))
 print("OPENAI KEY =", repr(os.getenv("OPENAI_API_KEY")))
 
-# Validate env vars early (prevents silent crashes)
+# Validate env vars early
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
@@ -52,6 +53,8 @@ async def on_ready():
 async def crane(ctx, *, message):
     try:
         print("USER MESSAGE:", message)
+        print("ABOUT TO CALL OPENAI")
+        print("API KEY EXISTS:", bool(OPENAI_API_KEY))
 
         response = client_ai.chat.completions.create(
             model="gpt-4o-mini",
@@ -63,14 +66,15 @@ async def crane(ctx, *, message):
 
         reply = response.choices[0].message.content
 
-        # prevent Discord limit crashes
         reply = str(reply)[:1900]
 
         await ctx.send(f"🧟 Kyle Crane: {reply}")
 
     except Exception as e:
         print("OPENAI ERROR TYPE:", type(e))
-        print("OPENAI ERROR:", repr(e))
-        await ctx.send(f"⚠️ Error in field: {e}")
+        print("OPENAI ERROR RAW:", repr(e))
+        traceback.print_exc()
+
+        await ctx.send(f"⚠️ OpenAI Error: {repr(e)}")
 
 bot.run(DISCORD_TOKEN)
