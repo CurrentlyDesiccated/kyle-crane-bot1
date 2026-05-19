@@ -3,6 +3,9 @@ from discord.ext import commands
 import os
 from openai import OpenAI
 
+# 🔍 DEBUG: check if Railway is giving the token
+print("TOKEN =", os.getenv("DISCORD_TOKEN"))
+
 # Load OpenAI client
 client_ai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
