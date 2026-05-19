@@ -1,24 +1,18 @@
 import discord
 from discord.ext import commands
 import os
-from openai import OpenAI
 import traceback
+from groq import Groq
 
-# 🔍 DEBUG
+# 🔍 ENV VARS
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 print("DISCORD TOKEN LOADED:", bool(DISCORD_TOKEN))
-print("OPENAI KEY LOADED:", bool(OPENAI_API_KEY))
+print("GROQ KEY LOADED:", bool(GROQ_API_KEY))
 
-if not DISCORD_TOKEN:
-    print("❌ Missing DISCORD_TOKEN in Railway")
-
-if not OPENAI_API_KEY:
-    print("❌ Missing OPENAI_API_KEY in Railway")
-
-# OpenAI client
-client_ai = OpenAI(api_key=OPENAI_API_KEY)
+# Groq client (FREE AI)
+client_ai = Groq(api_key=GROQ_API_KEY)
 
 # Discord setup
 intents = discord.Intents.default()
@@ -51,33 +45,24 @@ async def on_ready():
 @bot.command()
 async def crane(ctx, *, message):
     try:
-        print("🔥 COMMAND RECEIVED")
-        print("USER MESSAGE:", message)
-
-        if not OPENAI_API_KEY:
-            return await ctx.send("❌ OpenAI API key is missing in Railway")
-
-        print("🚀 CALLING OPENAI (gpt-4o-mini)")
+        print("🔥 USER:", message)
 
         response = client_ai.chat.completions.create(
-            model="gpt-4o-mini",
+            model="llama3-70b-8192",
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": message[:500]}
             ]
         )
 
-        reply = response.choices[0].message.content.strip()[:1900]
-
-        print("✅ OPENAI SUCCESS")
+        reply = response.choices[0].message.content[:1900]
 
         await ctx.send(f"🧟 Kyle Crane: {reply}")
 
     except Exception as e:
-        print("💥 OPENAI ERROR TYPE:", type(e))
-        print("💥 OPENAI ERROR RAW:", repr(e))
+        print("💥 ERROR:")
         traceback.print_exc()
 
-        await ctx.send(f"⚠️ OpenAI Error: {repr(e)}")
+        await ctx.send(f"⚠️ Error: {repr(e)}")
 
 bot.run(DISCORD_TOKEN)
