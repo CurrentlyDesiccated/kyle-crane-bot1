@@ -3,10 +3,11 @@ from discord.ext import commands
 import os
 from openai import OpenAI
 
-# 🔍 DEBUG: check if Railway is giving the token
-print("TOKEN =", os.getenv("DISCORD_TOKEN"))
+# 🔍 DEBUG: check Railway variables
+print("DISCORD TOKEN =", os.getenv("DISCORD_TOKEN"))
+print("OPENAI KEY =", os.getenv("OPENAI_API_KEY"))
 
-# Load OpenAI client
+# OpenAI client
 client_ai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Discord setup
@@ -15,7 +16,6 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# 🧟 Kyle Crane personality
 SYSTEM_PROMPT = """
 You are Kyle Crane from Dying Light / Dying Light: The Beast.
 
@@ -41,6 +41,8 @@ async def on_ready():
 @bot.command()
 async def crane(ctx, *, message):
     try:
+        print("USER MESSAGE:", message)
+
         response = client_ai.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -50,10 +52,14 @@ async def crane(ctx, *, message):
         )
 
         reply = response.choices[0].message.content
+
+        # safety trim (prevents Discord embed/message issues later)
+        reply = str(reply)[:1900]
+
         await ctx.send(f"🧟 Kyle Crane: {reply}")
 
     except Exception as e:
-        await ctx.send("Something went wrong in the field...")
-        print(e)
+        print("OPENAI ERROR:", e)
+        await ctx.send(f"⚠️ Error in field: {e}")
 
 bot.run(os.getenv("DISCORD_TOKEN"))
