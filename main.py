@@ -18,7 +18,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# 🧟 CORE KYLE CRANE LORE MEMORY (Dying Light 1 + The Beast vibe)
+# 🧟 CORE KYLE CRANE LORE MEMORY
 LORE_MEMORY = """
 You are Kyle Crane from Dying Light and Dying Light: The Beast.
 
@@ -47,33 +47,40 @@ Rules:
 - Give detailed, immersive, long responses (like Character.AI)
 """
 
-# 🧠 MEMORY STORAGE (per user)
+# 🧠 MEMORY STORAGE
 memory = {}
+MAX_MEMORY = 20
 
-MAX_MEMORY = 20  # remember more conversation
-
+# =========================
+# BOT READY
+# =========================
 @bot.event
 async def on_ready():
     print(f"Kyle Crane is online as {bot.user}")
 
-@bot.command()
-async def crane(ctx, *, message):
+# =========================
+# AUTO REPLY SYSTEM
+# =========================
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
     try:
-        user_id = str(ctx.author.id)
+        user_id = str(message.author.id)
 
-        print("🔥 USER:", message)
+        print("🔥 USER:", message.content)
 
-        # create memory if not exists
         if user_id not in memory:
             memory[user_id] = []
 
-        # add user message
-        memory[user_id].append({"role": "user", "content": message})
+        memory[user_id].append({
+            "role": "user",
+            "content": message.content
+        })
 
-        # trim memory
         memory[user_id] = memory[user_id][-MAX_MEMORY:]
 
-        # build messages for AI
         messages = [
             {"role": "system", "content": LORE_MEMORY},
             *memory[user_id]
@@ -86,32 +93,33 @@ async def crane(ctx, *, message):
 
         reply = completion.choices[0].message.content
 
-        # add bot reply to memory
-        memory[user_id].append({"role": "assistant", "content": reply})
+        memory[user_id].append({
+            "role": "assistant",
+            "content": reply
+        })
 
-        # Discord-safe chunking
+        # 💬 Discord safe chunking
         if len(reply) <= 1950:
-            await ctx.send(f"**Kyle Crane:** {reply}")
+            await message.channel.send(reply)
         else:
             chunks = [reply[i:i+1950] for i in range(0, len(reply), 1950)]
-
-            # first chunk gets the name
-            await ctx.send(f"**Kyle Crane:** {chunks[0]}")
-
-            # remaining chunks
-            for chunk in chunks[1:]:
-                await ctx.send(chunk)
+            for chunk in chunks:
+                await message.channel.send(chunk)
 
     except Exception as e:
         print("💥 ERROR:")
         traceback.print_exc()
-        await ctx.send(f"⚠️ Error: {repr(e)}")
+        await message.channel.send(f"⚠️ Error: {repr(e)}")
 
+    await bot.process_commands(message)
+
+# =========================
+# RESET COMMAND
+# =========================
 @bot.command()
 async def reset(ctx):
-    """Reset memory for user"""
     user_id = str(ctx.author.id)
     memory[user_id] = []
-    await ctx.send("🧠 Your survival memory has been wiped. Start fresh.")
+    await ctx.send("Your survival memory has been wiped. Start fresh.")
 
 bot.run(DISCORD_TOKEN)
