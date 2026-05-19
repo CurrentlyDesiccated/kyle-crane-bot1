@@ -50,7 +50,7 @@ Rules:
 # 🧠 MEMORY STORAGE (per user)
 memory = {}
 
-MAX_MEMORY = 10  # last 10 messages per user
+MAX_MEMORY = 20  # remember more conversation
 
 @bot.event
 async def on_ready():
@@ -89,10 +89,18 @@ async def crane(ctx, *, message):
         # add bot reply to memory
         memory[user_id].append({"role": "assistant", "content": reply})
 
-        # keep it Discord-safe but still long
-        reply = reply[:3500]
+        # Discord-safe chunking
+        if len(reply) <= 1950:
+            await ctx.send(f"**Kyle Crane:** {reply}")
+        else:
+            chunks = [reply[i:i+1950] for i in range(0, len(reply), 1950)]
 
-        await ctx.send(f"**Kyle Crane:** {reply}")
+            # first chunk gets the name
+            await ctx.send(f"**Kyle Crane:** {chunks[0]}")
+
+            # remaining chunks
+            for chunk in chunks[1:]:
+                await ctx.send(chunk)
 
     except Exception as e:
         print("💥 ERROR:")
