@@ -52,6 +52,25 @@ memory = {}
 MAX_MEMORY = 20
 
 # =========================
+# SAFE SENTENCE SPLITTER
+# =========================
+def split_message(text, limit=1950):
+    chunks = []
+    while len(text) > limit:
+        cut = text.rfind(".", 0, limit)
+
+        if cut == -1:
+            cut = limit
+
+        chunks.append(text[:cut+1].strip())
+        text = text[cut+1:].strip()
+
+    if text:
+        chunks.append(text)
+
+    return chunks
+
+# =========================
 # BOT READY
 # =========================
 @bot.event
@@ -98,13 +117,11 @@ async def on_message(message):
             "content": reply
         })
 
-        # 💬 Discord safe chunking
-        if len(reply) <= 1950:
-            await message.channel.send(reply)
-        else:
-            chunks = [reply[i:i+1950] for i in range(0, len(reply), 1950)]
-            for chunk in chunks:
-                await message.channel.send(chunk)
+        # 💬 FULL RESPONSE (SAFE SPLIT)
+        chunks = split_message(reply)
+
+        for chunk in chunks:
+            await message.channel.send(chunk)
 
     except Exception as e:
         print("💥 ERROR:")
