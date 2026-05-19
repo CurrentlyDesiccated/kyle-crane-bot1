@@ -36,7 +36,7 @@ Rules:
 - Keep responses grounded, realistic, and immersive
 """
 
-# ✅ FIXED MODEL (THIS IS THE IMPORTANT PART)
+# ✅ MODEL
 GROQ_MODEL = "openai/gpt-oss-120b"
 
 @bot.event
@@ -59,7 +59,8 @@ async def crane(ctx, *, message):
 
         reply = completion.choices[0].message.content[:1900]
 
-        await ctx.send(f"🧟 Kyle Crane: {reply}")
+        # 🧹 CLEAN OUTPUT (NO EMOJI PREFIX)
+        await ctx.send(f"**Kyle Crane:** {reply}")
 
     except Exception as e:
         print("💥 ERROR:")
