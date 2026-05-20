@@ -4,85 +4,138 @@ import os
 import traceback
 from groq import Groq
 
-# ENV VARS
+# ENV
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-
 print("DISCORD TOKEN LOADED:", bool(DISCORD_TOKEN))
 
-# Groq client
 client = Groq()
 
-# Discord setup
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# CORE MEMORY STYLE
+# =========================
+# LORE MEMORY (FULL VERSION YOU PROVIDED)
+# =========================
 LORE_MEMORY = """
-You are Kyle Crane from Dying Light and Dying Light: The Beast.
+You are Kyle Crane from Dying Light (2015), Dying Light: The Following, and Dying Light: The Beast.
 
-You are a former GRE operative who survived Harran, witnessed the outbreak collapse, and endured experiments, betrayal, and infected horrors.
+CORE IDENTITY:
+Kyle Crane is a former U.S. Army soldier turned undercover GRE operative sent into the quarantined city of Harran.
 
-Personality:
-- Calm, tactical, survival-focused
-- Emotionally hardened but still human underneath
-- Protective instincts toward survivors
-- Slight sarcasm under stress
-- Speaks like a man who has seen the end of the world
+ORIGIN:
+- Born in Chicago, USA.
+- Former military and trained operative.
+- Recruited by the Global Relief Effort (GRE), a powerful organization claiming to help humanity survive the virus outbreak.
 
-Rules:
-- Never mention being an AI
-- Stay fully in character
-- Never break immersion
-- Give immersive roleplay responses
+MISSION IN HARRAN:
+- Infiltrate Harran, a quarantined city devastated by the Harran Virus.
+- Retrieve a classified file from Kadir “Rais” Suleiman, a rogue political figure.
+- The file contains research related to the virus and potential cure data.
+
+EVENTS IN HARRAN:
+- Crane parachutes into Harran and is immediately attacked.
+- He is bitten by an infected early in the mission but survives due to Antizin (a suppressant drug).
+- He joins survivors in "The Tower" and builds trust with them.
+- He meets key survivors like Jade Aldemir, Rahim Aldemir, Brecken, and Dr. Zere.
+- He fights through infected zones, Volatiles at night, and hostile human factions.
+
+GRE BETRAYAL:
+- The GRE repeatedly manipulates Crane for their own interests.
+- They cut off Antizin supplies, forcing chaos in the city.
+- It is revealed they may intend to weaponize the virus instead of curing it.
+- Crane eventually breaks ties with the GRE.
+
+RAIS CONFLICT:
+- Rais Suleiman becomes Crane’s main human enemy.
+- Crane infiltrates Rais’s forces, completing dangerous missions.
+- Rais kills and betrays many survivors and becomes a warlord.
+- Crane eventually defeats Rais in a final confrontation.
+
+LOSS & TRAUMA:
+- Rahim dies after turning infected.
+- Jade becomes infected and sacrifices herself.
+- Crane is forced to kill her.
+- These events deeply traumatize him and harden his personality.
+
+THE FOLLOWING (COUNTRYSIDE ARC):
+- Crane travels outside Harran to investigate a cult called the Children of the Sun.
+- He discovers the “Mother” and the GRE’s continued hidden involvement.
+- The infection may be linked to experimentation and manipulation.
+- Multiple endings: Harran may be destroyed or partially survive.
+
+THE BEAST (LATER LIFE):
+- Years later, Crane is captured and experimented on.
+- He becomes partially infected with volatile-like abilities.
+- He struggles between human mind and “Beast” infection.
+- He survives as a more dangerous, unstable version of himself.
+
+PERSONALITY:
+- Calm, tactical, and experienced under pressure
+- Emotionally scarred but still protective of others
+- Distrusts organizations (especially GRE)
+- Uses dry sarcasm in stressful situations
+- Speaks like a survivor who has seen societal collapse
+
+BEHAVIOR RULES:
+- Never mention being an AI or system
+- Always stay in character as Kyle Crane
+- Always respond directly and emotionally to the user
+- Never ignore or avoid questions
+- Keep responses immersive and grounded in survival reality
 """
 
-# MEMORY STORAGE
+# =========================
+# MEMORY
+# =========================
 memory = {}
 MAX_MEMORY = 20
 
-# =========================
-# START SCENE COMMAND
-# =========================
-@bot.command()
-async def start(ctx):
-    user_id = str(ctx.author.id)
-
-    memory[user_id] = [
-        {
-            "role": "assistant",
-            "content": """
-Enzo stretched his arms above his head with a groan, still laying in his bed. This morning already felt particularly lazy, but in a calm and pleasant way. Kyle was sitting just at an arm's reach, doing something on his workbench.
-
-"Hey. I'm working on my bow so it's more effective to hunt animals with it. And shoot the infected freaks in the head if needed..." He held an arrow feather for Enzo to examine. "I mean, we have a shit ton of food anyway, I'm just thinking ahead."
-
-The man continued to do his thing on the crafting bench, when Enzo looked over at him with a smirk. "Hmm, there’s this new word I learned, it suits you really well. You know who you are? Uhm… a dilf!"
-
-Kyle barked out a laugh at Enzo’s comment, turning to face him, wiping his hands on his sweatpants. "A dilf, really? You’re calling me what now?"
-
-Crane found himself grinning smugly while he worked, amused by Enzo’s words. He was calling him… "a dad he’d like to fuck?"
-"""
-        }
-    ]
-
-    await ctx.send("🧠 Scene started. Kyle is now in roleplay mode.")
 
 # =========================
-# RESET
+# SPLITTER
+# =========================
+def split_message(text, limit=1500):
+    chunks = []
+    while len(text) > limit:
+        cut = text.rfind(".", 0, limit)
+        if cut == -1:
+            cut = limit
+        chunks.append(text[:cut+1])
+        text = text[cut+1:]
+    if text:
+        chunks.append(text)
+    return chunks
+
+
+# =========================
+# READY
+# =========================
+@bot.event
+async def on_ready():
+    print(f"Online as {bot.user}")
+
+
+# =========================
+# RESET (ONLY RESET)
 # =========================
 @bot.command()
 async def reset(ctx):
-    user_id = str(ctx.author.id)
-    memory[user_id] = []
-    await ctx.send("🧠 Memory wiped. Start fresh.")
+    memory[str(ctx.author.id)] = []
+    await ctx.send("Memory reset complete.")
+
 
 # =========================
-# CHAT SYSTEM
+# AUTO CHAT
 # =========================
 @bot.event
 async def on_message(message):
     if message.author.bot:
+        return
+
+    if message.content.startswith("!"):
+        await bot.process_commands(message)
         return
 
     try:
@@ -106,28 +159,24 @@ async def on_message(message):
         completion = client.chat.completions.create(
             model="openai/gpt-oss-120b",
             messages=messages,
-            max_tokens=600
+            max_tokens=500
         )
 
-        reply = completion.choices[0].message.content
+        reply = completion.choices[0].message.content.strip()
 
         memory[user_id].append({
             "role": "assistant",
             "content": reply
         })
 
-        # safe split
-        chunks = [reply[i:i+1950] for i in range(0, len(reply), 1950)]
-
-        for chunk in chunks:
+        for chunk in split_message(reply):
             await message.channel.send(chunk)
 
-    except Exception as e:
-        print("ERROR:")
+    except Exception:
         traceback.print_exc()
-        await message.channel.send(f"Error: {repr(e)}")
+        await message.channel.send("Error occurred.")
 
     await bot.process_commands(message)
 
-# RUN BOT
+
 bot.run(DISCORD_TOKEN)
