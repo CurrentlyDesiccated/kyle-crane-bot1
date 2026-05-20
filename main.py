@@ -18,19 +18,11 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# CORE KYLE CRANE LORE MEMORY
+# CORE MEMORY STYLE
 LORE_MEMORY = """
 You are Kyle Crane from Dying Light and Dying Light: The Beast.
 
 You are a former GRE operative who survived Harran, witnessed the outbreak collapse, and endured experiments, betrayal, and infected horrors.
-
-Key memories:
-- You were sent into Harran by the GRE.
-- You saw the city fall into quarantine chaos.
-- You worked with survivors like Jade and Rahim.
-- You fought Volatiles at night and learned extreme survival discipline.
-- You became hardened, distrustful of organizations like GRE.
-- In "The Beast" state, you are more unstable, aggressive, and emotionally scarred.
 
 Personality:
 - Calm, tactical, survival-focused
@@ -43,44 +35,54 @@ Rules:
 - Never mention being an AI
 - Stay fully in character
 - Never break immersion
-- Respond like a real human survivor
-- Give detailed immersive responses
+- Give immersive roleplay responses
 """
 
 # MEMORY STORAGE
 memory = {}
 MAX_MEMORY = 20
 
-# SAFE SPLITTER
-def split_message(text, limit=1950):
-    chunks = []
-    while len(text) > limit:
-        cut = text.rfind(".", 0, limit)
-        if cut == -1:
-            cut = limit
+# =========================
+# START SCENE COMMAND
+# =========================
+@bot.command()
+async def start(ctx):
+    user_id = str(ctx.author.id)
 
-        chunks.append(text[:cut+1].strip())
-        text = text[cut+1:].strip()
+    memory[user_id] = [
+        {
+            "role": "assistant",
+            "content": """
+Enzo stretched his arms above his head with a groan, still laying in his bed. This morning already felt particularly lazy, but in a calm and pleasant way. Kyle was sitting just at an arm's reach, doing something on his workbench.
 
-    if text:
-        chunks.append(text)
+"Hey. I'm working on my bow so it's more effective to hunt animals with it. And shoot the infected freaks in the head if needed..." He held an arrow feather for Enzo to examine. "I mean, we have a shit ton of food anyway, I'm just thinking ahead."
 
-    return chunks
+The man continued to do his thing on the crafting bench, when Enzo looked over at him with a smirk. "Hmm, there’s this new word I learned, it suits you really well. You know who you are? Uhm… a dilf!"
 
-# BOT READY
-@bot.event
-async def on_ready():
-    print(f"Kyle Crane is online as {bot.user}")
+Kyle barked out a laugh at Enzo’s comment, turning to face him, wiping his hands on his sweatpants. "A dilf, really? You’re calling me what now?"
 
-# AUTO REPLY SYSTEM
+Crane found himself grinning smugly while he worked, amused by Enzo’s words. He was calling him… "a dad he’d like to fuck?"
+"""
+        }
+    ]
+
+    await ctx.send("🧠 Scene started. Kyle is now in roleplay mode.")
+
+# =========================
+# RESET
+# =========================
+@bot.command()
+async def reset(ctx):
+    user_id = str(ctx.author.id)
+    memory[user_id] = []
+    await ctx.send("🧠 Memory wiped. Start fresh.")
+
+# =========================
+# CHAT SYSTEM
+# =========================
 @bot.event
 async def on_message(message):
     if message.author.bot:
-        return
-
-    # IMPORTANT FIX: ignore commands so !reset doesn't trigger AI
-    if message.content.startswith("!"):
-        await bot.process_commands(message)
         return
 
     try:
@@ -114,7 +116,8 @@ async def on_message(message):
             "content": reply
         })
 
-        chunks = split_message(reply)
+        # safe split
+        chunks = [reply[i:i+1950] for i in range(0, len(reply), 1950)]
 
         for chunk in chunks:
             await message.channel.send(chunk)
@@ -126,11 +129,5 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-# RESET COMMAND
-@bot.command()
-async def reset(ctx):
-    user_id = str(ctx.author.id)
-    memory[user_id] = []
-    await ctx.send("Your survival memory has been wiped. Start fresh.")
-
+# RUN BOT
 bot.run(DISCORD_TOKEN)
